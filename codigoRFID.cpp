@@ -38,7 +38,6 @@ void loop() {
   strID.toUpperCase();
   /***FIM DO BLOCO DE CÓDIGO RESPONSÁVEL POR GERAR A TAG RFID LIDA***/
 
-  Serial.print("Identificador (UID) da tag: "); //IMPRIME O TEXTO NA SERIAL
   Serial.println(strID); //IMPRIME NA SERIAL O UID DA TAG RFID
   tone(buzzer,1500);
   delay(500);
