@@ -1,0 +1,7 @@
+runs/*
+test/*
+train/*
+valid/*
+data.yaml
+readme.dataset.txt
+readme.roboflow.txt
