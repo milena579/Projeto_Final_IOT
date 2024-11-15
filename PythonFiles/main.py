@@ -9,84 +9,102 @@ from ultralytics import YOLO
 import numpy as np
 import cv2;
 
+def connectFirebase():
+    cred = credentials.Certificate("servico.json")
+    firebase_admin.initialize_app(cred,{'databaseURL': 'https://iot-final-23bc2-default-rtdb.firebaseio.com'})
 
-ser = serial.Serial('COM6', 9600, timeout=1)
-cred = credentials.Certificate("servico.json")
-firebase_admin.initialize_app(cred,{
-        'databaseURL': 'https://iot-final-23bc2-default-rtdb.firebaseio.com'
-})
-model = YOLO("best.pt")
+def startSerial():
+    return serial.Serial('COM6', 9600, timeout=1)
 
-ref = db.reference("/")
+def startModel():
+    return YOLO("best.pt")
 
-data = {"employers":
-    [
-        {
-            "name":"Milena",
-            "EDV":"99999999",
-            "RFID":"C3018DAB"
-        },
-        {
-            "name":"Ingrid",
-            "EDV":"88888888",
-            "RFID":"334D33AD"
-        },
-        {
-            "name":"Juan",
-            "EDV":"87888888",
-            "RFID":"B3CA3310"
-        },
+def startDatabase():
+    data = {"employers":
+        [
+            {
+                "name":"Milena",
+                "EDV":"99999999",
+                "RFID":"C3018DAB"
+            },
+            {
+                "name":"Ingrid",
+                "EDV":"88888888",
+                "RFID":"334D33AD"
+            },
+            {
+                "name":"Juan",
+                "EDV":"87888888",
+                "RFID":"B3CA3310"
+            },
 
-    ],"tools":
-    [
-        {
-            "name":"Hammer",
-            "qta":"1"
-        },
-        {
-            "name":"Pliers",
-            "qta":"1"
-        },
-        {
-            "name":"screwdriver",
-            "qta":"1"
-        },
-        {
-            "name":"wrench",
-            "qta":"2"
-        }
-    ]
-}
+        ],"tools":
+        [
+            {
+                "name":"Hammer",
+                "qta":"1"
+            },
+            {
+                "name":"Pliers",
+                "qta":"1"
+            },
+            {
+                "name":"screwdriver",
+                "qta":"1"
+            },
+            {
+                "name":"wrench",
+                "qta":"2"
+            }
+        ]
+    }
+    db.reference("/").set(data)
 
-ref.set(data)
+def pushDatabase(data):
+    ref = db.reference("/lends").push(data)
 
-ref = db.reference("/lends")
-
-
-oldline = ""
-
-while 1:
+def captureImage():
     cap = cv2.VideoCapture(0)
+    status, photo = cap.read()
+    cap.release()
+    photo_resized = cv2.resize(photo, (640, 640))
+    return np.expand_dims(photo_resized, axis=0)
+
+def readSerial(ser):
     line = ser.readline()
     line = line.decode('utf-8')
-    line = input("Line=")
-
-    if(line!= "" or line!=oldline):
-        oldline = line
-        status, photo = cap.read()
-        cap.release()
-        photo_resized = cv2.resize(photo, (640, 640))
-        photo_array = np.expand_dims(photo_resized, axis=0)
 
 
-        result = model.predict("final.jpg")
+
+
+
+
+
+
+
+
+connectFirebase()
+ser = startSerial()
+model = startModel()
+startDatabase()
+
+
+
+oldLine = ""
+
+while 1:
+    line = readSerial(ser)
+
+    if(line!= "" or line!=oldLine):
+        oldLine = line
+
+        result = model.predict(captureImage())
+        
         print(result[0].names)
         for box in  result[0].boxes:
             print(box.cls,box.conf)
 
-        
-        ref.push({"id":line})
+        pushDatabase({"info":result[0].boxes})
 
-        cv2.waitKey(5000)
-        cv2.destroyAllWindows()
+        
         
