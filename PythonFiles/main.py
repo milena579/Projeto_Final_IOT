@@ -10,7 +10,7 @@ import numpy as np
 import cv2;
 
 
-# ser = serial.Serial('COM6', 9600, timeout=1)
+ser = serial.Serial('COM6', 9600, timeout=1)
 cred = credentials.Certificate("servico.json")
 firebase_admin.initialize_app(cred,{
         'databaseURL': 'https://iot-final-23bc2-default-rtdb.firebaseio.com'
@@ -67,8 +67,8 @@ oldline = ""
 
 while 1:
     cap = cv2.VideoCapture(0)
-    # line = ser.readline()
-    # line = line.decode('utf-8')
+    line = ser.readline()
+    line = line.decode('utf-8')
     line = input("Line=")
 
     if(line!= "" or line!=oldline):
@@ -76,8 +76,15 @@ while 1:
         status, photo = cap.read()
         cap.release()
         photo_resized = cv2.resize(photo, (640, 640))
-        # photo_array = np.expand_dims(photo_resized, axis=0)
+        photo_array = np.expand_dims(photo_resized, axis=0)
 
+
+        result = model.predict("final.jpg")
+        print(result[0].names)
+        for box in  result[0].boxes:
+            print(box.cls,box.conf)
+
+        
         ref.push({"id":line})
 
         cv2.waitKey(5000)
