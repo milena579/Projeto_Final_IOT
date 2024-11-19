@@ -7,7 +7,8 @@ import serial
 import time
 from ultralytics import YOLO
 import numpy as np
-import cv2;
+import cv2
+from datetime import datetime
 
 def connectFirebase():
     cred = credentials.Certificate("servico.json")
@@ -19,26 +20,8 @@ def startSerial():
 def startModel():
     return YOLO("best.pt")
 
-def startDatabase(tools):
-    data = {"employers":
-        [
-            {
-                "name":"Milena",
-                "EDV":"99999999",
-                "RFID":"C3018DAB"
-            },
-            {
-                "name":"Ingrid",
-                "EDV":"88888888",
-                "RFID":"334D33AD"
-            },
-            {
-                "name":"Juan",
-                "EDV":"87888888",
-                "RFID":"B3CA3310"
-            },
-
-        ],"tools":tools,
+def startDatabase(tools,employers):
+    data = {"employers":employers,"tools":tools,
         "lend":-1
     }
     db.reference("/").set(data)
@@ -75,32 +58,55 @@ def updateLending(data):
 def resetTools():
     return [
         {
-            "name":"Hammer",
+            "name":"Martelo",
             "qta":0
         },
         {
-            "name":"Pliers",
+            "name":"Alicate",
             "qta":0
         },
         {
-            "name":"screwdriver",
+            "name":"Chave de fenda",
             "qta":0
         },
         {
-            "name":"wrench",
+            "name":"Chave de boca",
             "qta":0
         }
     ]
+
 
 connectFirebase()
 ser = startSerial()
 model = startModel()
 
+employers = [
+    {
+        "name":"Milena",
+        "EDV":"99999999",
+        "RFID":"C3018DAB"
+    },
+    {
+        "name":"Ingrid",
+        "EDV":"88888888",
+        "RFID":"334D33AD"
+    },
+    {
+        "name":"Juan",
+        "EDV":"87888888",
+        "RFID":"B3CA3310"
+    },
+    {
+        "name":"Adrian",
+        "EDV":"08A7060D",
+        "RFID":"08A7060D"
+    }
+]
 
 
 
 firstools = updateTools(resetTools())
-startDatabase(firstools)
+startDatabase(firstools,employers)
 
 
 oldLine = ""
@@ -109,9 +115,9 @@ while 1:
     tools = resetTools()
 
     line = readSerial(ser)
-    print(line)
 
-    if(line != "" or line!=oldLine):
+    if(line != "" and line!=oldLine and line!="closed"):
+        print(line)
         oldLine = line
         time.sleep(2)
         result = model.predict(captureImage())    
@@ -120,15 +126,33 @@ while 1:
                 tools[int(box.cls)]["qta"]+=1
         pushDatabase(tools)
     
-    toolLend=""
+        toolLend=""
 
-    for i in range(4):
-        num = firstools[i]["qta"] - tools[i]["qta"]
-        if(num>0):
-            toolLend += num+"x"+tools[i]["name"] if i==0 else ", "+num+"x"+tools[i]["name"]
-    if(toolLend==""):
-        continue
-    updateLending({"RFID":line,"loan":toolLend})
+        for i in range(4):
+            num = firstools[i]["qta"] - tools[i]["qta"]
+            print(str(num)+"="+str(firstools[i]["qta"])+"-"+str(tools[i]["qta"]))
+            if(num>0):
+                toolLend +="loan "+ str(num)+"x"+tools[i]["name"] if i==0 else ", loan "+str(num)+"x"+tools[i]["name"]
+                continue
+            if(num<0):
+                toolLend +="retuned "+ str(num*-1)+"x"+tools[i]["name"] if i==0 else ", returned "+str(num*-1)+"x"+tools[i]["name"]
+
+        if(toolLend==""):
+            continue
+        
+        line = line.strip()
+        send = False
+        currtime = datetime.now()
+        for i in range(len(employers)):
+            if(employers[i]["RFID"] == line):
+                updateLending({"name":employers[i]["name"],"RFID":line,"loan":toolLend,"datetime":str(currtime)})
+                print({"name":employers[i]["name"],"RFID":line,"loan":toolLend,"datetime":str(datetime.now())})
+                send=True
+        if(not send):
+            updateLending({"name":"unknow","RFID":line,"loan":toolLend,"datetime":str(currtime)})
+            print({"name":"unknow","RFID":line,"loan":toolLend,"datetime":datetime.now()})
+
+        firstools = tools
 
 
         
