@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 // https://www.instructables.com/Interfacing-RFID-RC522-With-Arduino-MEGA-a-Simple-/
 // https://blogmasterwalkershop.com.br/arduino/como-usar-com-arduino-kit-rfid-mfrc522
 
@@ -16,11 +18,13 @@
 MFRC522 rfid(SS_PIN, RST_PIN); //PASSAGEM DE PARÂMETROS REFERENTE AOS PINOS
 
 int buzzer = 2;
+int pir = 3;
 void setup() {
   Serial.begin(9600); //INICIALIZA A SERIAL
   SPI.begin(); //INICIALIZA O BARRAMENTO SPI
   rfid.PCD_Init(); //INICIALIZA MFRC522
   pinMode(buzzer, OUTPUT);
+  pinMode(pir,INPUT);
 }
 
 void loop() {
@@ -42,6 +46,13 @@ void loop() {
   tone(buzzer,1500);
   delay(500);
   noTone(buzzer);
+  while(1){
+    delay(10000);
+    if(!digitalRead(pir)){
+      Serial.println("closed");
+      break;
+    };
+  };
   rfid.PICC_HaltA(); //PARADA DA LEITURA DO CARTÃO
   rfid.PCD_StopCrypto1(); //PARADA DA CRIPTOGRAFIA NO PCD
 }

@@ -18,7 +18,7 @@ def startSerial():
     return serial.Serial('COM6', 9600, timeout=1)
 
 def startModel():
-    return YOLO("best.pt")
+    return YOLO("Rede1/best.pt")
 
 def startDatabase(tools,employers):
     data = {"employers":employers,"tools":tools,
@@ -116,19 +116,25 @@ while 1:
 
     line = readSerial(ser)
 
-    if(line != "" and line!=oldLine and line!="closed"):
+    if(line != "" and line!=oldLine):
         print(line)
         oldLine = line
+        rfid = line.strip()
+        while True:
+            line = readSerial(ser)
+            if(line.strip()=="closed"):
+                oldLine = line
+                break
         time.sleep(2)
         result = model.predict(captureImage())    
         for box in  result[0].boxes:
-            if(float(box.conf)>0.5):
+            if(float(box.conf)>0.3):
                 tools[int(box.cls)]["qta"]+=1
         pushDatabase(tools)
     
         toolLend=""
 
-        for i in range(4):
+        for i in range(len(firstools)):
             num = firstools[i]["qta"] - tools[i]["qta"]
             print(str(num)+"="+str(firstools[i]["qta"])+"-"+str(tools[i]["qta"]))
             if(num>0):
@@ -140,17 +146,16 @@ while 1:
         if(toolLend==""):
             continue
         
-        line = line.strip()
         send = False
         currtime = datetime.now()
         for i in range(len(employers)):
-            if(employers[i]["RFID"] == line):
-                updateLending({"name":employers[i]["name"],"RFID":line,"loan":toolLend,"datetime":str(currtime)})
-                print({"name":employers[i]["name"],"RFID":line,"loan":toolLend,"datetime":str(datetime.now())})
+            if(employers[i]["RFID"] == rfid):
+                updateLending({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"datetime":str(currtime)})
+                print({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"datetime":str(datetime.now())})
                 send=True
         if(not send):
-            updateLending({"name":"unknow","RFID":line,"loan":toolLend,"datetime":str(currtime)})
-            print({"name":"unknow","RFID":line,"loan":toolLend,"datetime":datetime.now()})
+            updateLending({"name":"unknow","RFID":rfid,"loan":toolLend,"datetime":str(currtime)})
+            print({"name":"unknow","RFID":rfid,"loan":toolLend,"datetime":datetime.now()})
 
         firstools = tools
 
