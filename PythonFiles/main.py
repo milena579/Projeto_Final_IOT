@@ -133,29 +133,30 @@ while 1:
         pushDatabase(tools)
     
         toolLend=""
+        toolReturn=""
 
         for i in range(len(firstools)):
             num = firstools[i]["qta"] - tools[i]["qta"]
             print(str(num)+"="+str(firstools[i]["qta"])+"-"+str(tools[i]["qta"]))
             if(num>0):
-                toolLend +="loan "+ str(num)+"x"+tools[i]["name"] if i==0 else ", loan "+str(num)+"x"+tools[i]["name"]
+                toolLend +=str(num)+"x"+tools[i]["name"] if toolLend=="" else ", "+str(num)+"x"+tools[i]["name"]
                 continue
             if(num<0):
-                toolLend +="retuned "+ str(num*-1)+"x"+tools[i]["name"] if i==0 else ", returned "+str(num*-1)+"x"+tools[i]["name"]
+                toolReturn +=str(num*-1)+"x"+tools[i]["name"] if toolReturn=="" else ", "+ str(num*-1)+"x"+tools[i]["name"]
 
-        if(toolLend==""):
+        if(toolLend=="" and toolReturn==""):
             continue
         
         send = False
         currtime = datetime.now()
         for i in range(len(employers)):
             if(employers[i]["RFID"] == rfid):
-                updateLending({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"datetime":str(currtime)})
-                print({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"datetime":str(datetime.now())})
+                updateLending({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"return":toolReturn,"datetime":str(currtime)})
+                print({"name":employers[i]["name"],"RFID":rfid,"loan":toolLend,"return":toolReturn,"datetime":str(currtime)})
                 send=True
         if(not send):
-            updateLending({"name":"unknow","RFID":rfid,"loan":toolLend,"datetime":str(currtime)})
-            print({"name":"unknow","RFID":rfid,"loan":toolLend,"datetime":datetime.now()})
+            updateLending({"name":"Desconhecido","RFID":rfid,"loan":toolLend,"return":toolReturn,"datetime":str(currtime)})
+            print({"name":"Desconhecido","RFID":rfid,"loan":toolLend,"return":toolReturn,"datetime":str(currtime)})
 
         firstools = tools
 
