@@ -30,7 +30,7 @@ def pushDatabase(data):
     db.reference("/tools").set(data)
 
 def captureImage():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     try:
         status, photo = cap.read()
         photo = cv2.resize(photo, (640, 640))
