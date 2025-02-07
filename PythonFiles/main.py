@@ -100,6 +100,11 @@ employers = [
         "name":"Adrian",
         "EDV":"08A7060D",
         "RFID":"08A7060D"
+    },
+    {
+        "name":"Helena",
+        "EDV":"777777",
+        "RFID":"B386F3BD"
     }
 ]
 
@@ -128,7 +133,7 @@ while 1:
         time.sleep(2)
         result = model.predict(captureImage())    
         for box in  result[0].boxes:
-            if(float(box.conf)>0.3):
+            if(float(box.conf)>0.5):
                 tools[int(box.cls)]["qta"]+=1
         pushDatabase(tools)
     

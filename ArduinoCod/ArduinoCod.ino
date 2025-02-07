@@ -51,7 +51,7 @@ void loop() {
   delay(500);
   noTone(buzzer);
   while(1){
-    delay(10000);
+    delay(5000);
     if(!digitalRead(pir)){
       Serial.println("closed");
       break;
